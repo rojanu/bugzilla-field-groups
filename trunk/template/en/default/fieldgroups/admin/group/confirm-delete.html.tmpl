@@ -1,0 +1,114 @@
+[%# The contents of this file are subject to the Mozilla Public
+  # License Version 1.1 (the "License"); you may not use this file
+  # except in compliance with the License. You may obtain a copy of
+  # the License at http://www.mozilla.org/MPL/
+  #
+  # Software distributed under the License is distributed on an "AS
+  # IS" basis, WITHOUT WARRANTY OF ANY KIND, either express or
+  # implied. See the License for the specific language governing
+  # rights and limitations under the License.
+  #
+  # The Original Code is the Bugzilla Bug Tracking System.
+  #
+  # Contributor(s): Max Kanat-Alexander <mkanat@bugzilla.org>
+  #                 Ali Ustek <aliustek@gmail.com>
+  #%]
+
+[%# INTERFACE:
+  # group: Bugzilla::Field::ChoiceGroup; The field value being deleted.
+  # group_count: number; The number of groups available for this field.
+  # field: object; the field the value is being deleted from.
+  #%]
+
+[% title = BLOCK %]
+  Delete Group '[% group.name FILTER html %]' from the 
+  '[% field.description FILTER html %]' ([% field.name FILTER html %]) field
+[% END %]
+
+[% PROCESS global/header.html.tmpl
+  title = title
+  style_urls = ['skins/standard/admin.css']
+%]
+
+<table border="1" cellpadding="4" cellspacing="0">
+<tr bgcolor="#6666FF">
+  <th valign="top" align="left">Field</th>
+  <th valign="top" align="left">Value</th>
+</tr>
+<tr>
+  <td valign="top">Field Name:</td>
+  <td valign="top">[% field.description FILTER html %]</td>
+</tr>
+<tr>
+  <td valign="top">Field Group:</td>
+  <td valign="top">[% group.name FILTER html %]</td>
+</tr>
+<tr>
+  <td valign="top">Group Values:</td>
+  <td valign="top">
+[% IF group.value_count %]
+   <a title="List of values where '
+                    [%- field.description FILTER html %]' value is in '
+                    [%- group.name FILTER html %]'"
+             href="editvalues.cgi?field=[% field.name FILTER uri %]">
+        [%- group.value_count FILTER html %]
+    </a>
+[% ELSE %]
+  None
+[% END %]
+  </td>
+</tr>
+</table>
+
+<h2>Confirmation</h2>
+
+[% IF group.value_count %]
+
+  <p>Sorry, but the '[% group.name FILTER html %]' group cannot be deleted
+    from the '[% field.description FILTER html %]' field for the following 
+    reason(s):</p>
+
+  <ul class="warningmessages">
+    [% IF group.value_count  %]
+      <li>
+        [% IF group.value_count > 1 %]
+          There are [% group.value_count FILTER html %] values
+          with this field group.
+        [% ELSE %]
+          There is 1 value with this field group.
+        [% END %]
+        You must change the field value group on
+          <a title="List of values where '
+                    [%- field.description FILTER html %]' value is in '
+                    [%- group.name FILTER html %]'"
+             href="editvalues.cgi?field=[% field.name FILTER uri %]">
+            [% IF group.value_count > 1 %]
+              those values
+            [% ELSE %]
+              that value
+            [% END %]
+          </a>
+          to another group before you can delete this group.
+      </li>
+    [% END %]
+  </ul>
+
+[% ELSE %]
+
+  <p>Do you really want to delete this group?</p>
+
+  <form method="post" action="page.cgi?id=fieldgroups.html">
+    <input type="submit" value="Yes, delete" id="delete">
+    <input type="hidden" name="action" value="delete">
+    <input type="hidden" name="field" value="[% field.name FILTER html %]">
+    <input type="hidden" name="group" value="[% group.name FILTER html %]">
+    <input type="hidden" name="token" value="[% token FILTER html %]">
+  </form>
+
+[% END %]
+
+[% PROCESS fieldgroups/admin/group/footer.html.tmpl
+  no_edit_link = 1
+ +%]
+
+[% PROCESS global/footer.html.tmpl %] 
