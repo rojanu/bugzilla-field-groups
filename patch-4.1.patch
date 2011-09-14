@@ -1,0 +1,102 @@
+=== modified file 'template/en/default/admin/custom_fields/edit.html.tmpl'
+--- template/en/default/admin/custom_fields/edit.html.tmpl	2010-08-27 03:27:08 +0000
++++ template/en/default/admin/custom_fields/edit.html.tmpl	2011-09-08 12:43:43 +0000
+@@ -140,7 +140,9 @@
+         <th>&nbsp;</th>
+         <td>
+           <a href="editvalues.cgi?field=[% field.name FILTER uri %]">Edit
+-            legal values for this field</a>.
++            legal values for this field</a>.<br>
++          <a href="editvaluegroups.cgi?field=[% field.name FILTER uri %]">Edit
++            legal groups for this field</a>.
+         </td>
+ 
+         <th>
+
+=== modified file 'template/en/default/admin/fieldvalues/create.html.tmpl'
+--- template/en/default/admin/fieldvalues/create.html.tmpl	2010-02-02 01:34:26 +0000
++++ template/en/default/admin/fieldvalues/create.html.tmpl	2011-09-08 12:43:54 +0000
+@@ -86,6 +86,7 @@
+         </td>
+       </tr>
+     [% END %]
++    [% Hook.process('end_parameters') %]
+   </table>
+   <input type="submit" id="create" value="Add">
+   <input type="hidden" name="action" value="new">
+
+=== modified file 'template/en/default/admin/fieldvalues/edit.html.tmpl'
+--- template/en/default/admin/fieldvalues/edit.html.tmpl	2010-05-14 14:25:05 +0000
++++ template/en/default/admin/fieldvalues/edit.html.tmpl	2011-09-08 12:45:56 +0000
+@@ -100,6 +100,7 @@
+            [% END %]
+       </td>
+     </tr>
++    [% Hook.process('end_parameters') %]
+   </table>
+   <input type="hidden" name="value" value="[% value.name FILTER html %]">
+   <input type="hidden" name="action" value="update">
+
+=== modified file 'template/en/default/bug/field.html.tmpl'
+--- template/en/default/bug/field.html.tmpl	2011-02-23 06:06:05 +0000
++++ template/en/default/bug/field.html.tmpl	2011-09-08 12:55:45 +0000
+@@ -123,21 +123,28 @@
+           [% ELSE %]
+             [% legal_values = field.legal_values %]
+           [% END %]
+-          [% FOREACH legal_value = legal_values %]
+-            [% NEXT IF NOT legal_value.is_active AND NOT value.contains(legal_value.name).size %]
+-            <option value="[% legal_value.name FILTER html %]"
+-                    id="v[% legal_value.id FILTER html %]_
+-                        [%- field.name FILTER html %]"
+-              [%# We always show selected values, even if they should be
+-                # hidden %]
+-              [% IF value.contains(legal_value.name).size %]
+-                selected="selected"
+-              [% ELSIF bug AND !legal_value.is_visible_on_bug(bug) %]
+-                class="bz_hidden_option" disabled="disabled"
+-              [% END %]>
+-              [%- display_value(field.name, legal_value.name) FILTER html ~%]
+-            </option>
+-          [% END %]
++          [%- FOREACH g = field.legal_groups %]
++            [% NEXT IF NOT g.group_values.size %]
++            <optgroup [% ' label="' _ g.name _ '"' UNLESS g.name == 'Default' %]>
++                [%- FOREACH legal_value = g.group_values %]
++                  [% NEXT IF NOT legal_value.is_active 
++                                    AND NOT value.contains(legal_value.name).size
++                                    AND NOT legal_values.contains(legal_value).size %]
++                  <option value="[% legal_value.name FILTER html %]"
++                       id="v[% legal_value.id FILTER html %]_
++                            [%- field.name FILTER html %]"
++                  [%# We always show selected values, even if they should be
++                    # hidden %]
++                  [% IF value.contains(legal_value.name).size %]
++                    selected="selected"
++                  [% ELSIF bug AND !legal_value.is_visible_on_bug(bug) %]
++                   class="bz_hidden_option" disabled="disabled"
++                  [% END %]>
++                  [%- display_value(field.name, legal_value.name) FILTER html ~%]
++                </option>
++              [%- END %]
++            </optgroup>
++            [%- END %]
+         </select>
+         [%# When you pass an empty multi-select in the web interface,
+           # it doesn't appear at all in the CGI object. Instead of
+
+=== modified file 'template/en/default/global/messages.html.tmpl'
+--- template/en/default/global/messages.html.tmpl	2011-08-17 11:05:31 +0000
++++ template/en/default/global/messages.html.tmpl	2011-09-09 10:39:15 +0000
+@@ -328,6 +328,10 @@
+           <li>Sortkey updated to 
+             <em>[% changes.sortkey.1 FILTER html %]</em>.</li>
+         [% END %]
++        [% IF changes.group_id %]
++        	<li>Value now belongs to group
++        	  <em>[% value.group.name FILTER html %]</em>.</li>
++        [% END %]
+         [% IF changes.visibility_value_id %]
+           [% IF value.visibility_value.defined %]
+             <li>It only appears when 
+
