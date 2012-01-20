@@ -29,14 +29,14 @@ use Bugzilla::Error;
 use Bugzilla::Token;
 
 use Bugzilla::Extension::FieldGroups::Util;
-use Bugzilla::Extension::FieldGroups::Group;
+use Bugzilla::Extension::FieldGroups::Optgroup;
 
 our $VERSION = '0.01';
 
 BEGIN {
-   *Bugzilla::Field::legal_groups = \&_legal_groups;
-   *Bugzilla::Field::Choice::set_group = \&_set_group;
-   *Bugzilla::Field::ChoiceInterface::group = \&_group;
+   *Bugzilla::Field::legal_optgroups = \&_legal_optgroups;
+   *Bugzilla::Field::Choice::set_optgroup = \&_set_optgroup;
+   *Bugzilla::Field::ChoiceInterface::optgroup = \&_optgroup;
 }
 
 #############################
@@ -46,10 +46,10 @@ BEGIN {
 sub db_schema_abstract_schema {
     my ($self, $args) = @_;
     
-    # Field Choice Group Information
+    # Field Choice Optgroup Information
     # -------------------------
 
-    $args->{'schema'}->{'field_choice_group'} = {
+    $args->{'schema'}->{'field_choice_optgroup'} = {
         FIELDS => [
         	id            => {TYPE => 'MEDIUMSERIAL', NOTNULL => 1, PRIMARYKEY => 1},
             field_id   => {TYPE => 'INT3', NOTNULL => 1,
@@ -60,9 +60,9 @@ sub db_schema_abstract_schema {
             sortkey    => {TYPE => 'INT2', NOTNULL => 1, DEFAULT => 0},
         ],
         INDEXES => [
-        	fieldchoicegroup_name_field_id_idx => 
+        	fieldchoiceoptgroup_name_field_id_idx => 
                 {FIELDS => [qw(field_id name)], TYPE => 'UNIQUE'},
-            fieldchoicegroup_sortkey_idx => ['sortkey'],
+            fieldchoiceoptgroup_sortkey_idx => ['sortkey'],
         ],
     };
 }
@@ -77,18 +77,18 @@ sub install_update_db {
         'SELECT name FROM fielddefs WHERE custom = 1 AND type IN(?,?)',
         undef, FIELD_TYPE_SINGLE_SELECT, FIELD_TYPE_MULTI_SELECT);
     foreach my $field_name (@standard_fields, @$custom_fields) {
-    	if (!$dbh->bz_column_info($field_name, 'group_id')){
+    	if (!$dbh->bz_column_info($field_name, 'optgroup_id')){
     	    my $field = new Bugzilla::Field({'name' => $field_name});
-	        my $group = Bugzilla::Extension::FieldGroups::Group->create({
+	        my $optgroup = Bugzilla::Extension::FieldGroups::Optgroup->create({
 		        name   => "Default", 
         		field => $field,
 		        sortkey => "0",
 		    });
-        	$dbh->bz_add_column($field_name, 'group_id', 
+        	$dbh->bz_add_column($field_name, 'optgroup_id', 
         												{TYPE => 'INT2'},
-        												$group->id);
-	        $dbh->bz_add_index($field_name, "${field_name}_group_id_idx", 
-                           ['group_id']);
+        												$optgroup->id);
+	        $dbh->bz_add_index($field_name, "${field_name}_optgroup_id_idx", 
+                           ['optgroup_id']);
 		}
     }
 }
@@ -101,7 +101,7 @@ sub object_columns {
     my ($class, $columns) = @$args{qw(class columns)};
 
     if ($class->isa('Bugzilla::Field::Choice')) {
-        push(@$columns, 'group_id');
+        push(@$columns, 'optgroup_id');
     }
 }
 
@@ -110,9 +110,8 @@ sub object_before_create {
     my ($class, $params) = @$args{qw(class params)};
     if ($class->isa('Bugzilla::Field::Choice')) {
         my $input = Bugzilla->input_params;
-        my $group = Bugzilla::Extension::FieldGroups::Group->new(
-            																						$input->{'group_id'});
-        $params->{group_id}   = $group->id;
+        my $optgroup = Bugzilla::Extension::FieldGroups::Optgroup->new($input->{'optgroup_id'});
+        $params->{optgroup_id}   = $optgroup->id;
     }
 }
 
@@ -121,7 +120,7 @@ sub object_validators {
     my ($class, $validators) = @$args{qw(class validators)};
 
     if ($class->isa('Bugzilla::Field::Choice')) {
-        $validators->{group_id} = \&_check_group_id;
+        $validators->{optgroup_id} = \&_check_optgroup_id;
     }
 }
 
@@ -132,7 +131,7 @@ sub object_end_of_create {
     my $object = $args->{'object'};
 
 	if ($class->isa('Bugzilla::Field')) {
-		my $created_group = Bugzilla::Extension::FieldGroups::Group->create({
+		my $created_optgroup = Bugzilla::Extension::FieldGroups::Optgroup->create({
             name   => "Default", 
             field => $class,
             sortkey => "0",
@@ -145,7 +144,7 @@ sub object_update_columns {
     my ($object, $columns) = @$args{qw(object columns)};
 
     if ($object->isa('Bugzilla::Field::Choice')) {
-        push(@$columns, 'group_id');
+        push(@$columns, 'optgroup_id');
     }
 }
 
@@ -154,10 +153,9 @@ sub object_end_of_set_all {
     my ($object) = $args->{object};
     if ($object->isa('Bugzilla::Field::Choice')) {
         my $input = Bugzilla->input_params;
-        if ($object->{group_id} != $input->{'group_id'}) {
-            my $group = Bugzilla::Extension::FieldGroups::Group->new(
-            																						$input->{'group_id'});
-        	$object->{group_id} = $group->id;
+        if ($object->{optgroup_id} != $input->{'optgroup_id'}) {
+            my $optgroup = Bugzilla::Extension::FieldGroups::Optgroup->new($input->{'optgroup_id'});
+        	$object->{optgroup_id} = $optgroup->id;
         }
     }
 }
@@ -165,51 +163,51 @@ sub object_end_of_set_all {
 #############################
 #              Bugzilla::Field Object Methods             #
 #############################
-sub _legal_groups {
+sub _legal_optgroups {
     my $self = shift;
     my $dbh = Bugzilla->dbh;
 
-   if (!defined $self->{'legal_groups'}) {
+   if (!defined $self->{'legal_optgroups'}) {
         my $ids = $dbh->selectcol_arrayref(q{
-            SELECT id FROM field_choice_group
+            SELECT id FROM field_choice_optgroup
              WHERE field_id = ?}, undef, $self->id);
  
-        $self->{'legal_groups'} = 
-        						Bugzilla::Extension::FieldGroups::Group->new_from_list($ids);
+        $self->{'legal_optgroups'} = 
+        						Bugzilla::Extension::FieldGroups::Optgroup->new_from_list($ids);
     }
 
-    return $self->{'legal_groups'};
+    return $self->{'legal_optgroups'};
 }
 
 #############################
 #      Bugzilla::Field::Choice Object Methods       #
 #############################
-sub _check_group_id {
-    my ($invocant, $group_id) = @_;
-    $group_id = trim($group_id);
-    return undef if !$group_id;
-    my $group_obj = 
-    			Bugzilla::Extension::FieldGroups::Group->check({ id => $group_id });
-    return $group_obj->id;
+sub _check_optgroup_id {
+    my ($invocant, $optgroup_id) = @_;
+    $optgroup_id = trim($optgroup_id);
+    return undef if !$optgroup_id;
+    my $optgroup_obj = 
+    			Bugzilla::Extension::FieldGroups::Optgroup->check({ id => $optgroup_id });
+    return $optgroup_obj->id;
 }
 
-sub _set_group  {
-    my ($self, $group) = @_;
-    $self->set('group_id', $group);
-    delete $self->{group};
+sub _set_optgroup  {
+    my ($self, $optgroup) = @_;
+    $self->set('optgroup_id', $optgroup);
+    delete $self->{optgroup};
 }
 
 ##############################
 # Bugzilla::Field::ChoiceInterface Object Methods #
 ##############################
-sub _group {
+sub _optgroup {
     my $self = shift;
-    if ($self->{group_id}) {
-        require Bugzilla::Extension::FieldGroups::Group;
-        $self->{group} ||= 
-        					Bugzilla::Extension::FieldGroups::Group->new($self->{group_id});
+    if ($self->{optgroup_id}) {
+        require Bugzilla::Extension::FieldGroups::Optgroup;
+        $self->{optgroup} ||= 
+                Bugzilla::Extension::FieldGroups::Optgroup->new($self->{optgroup_id});
     }
-    return $self->{group};
+    return $self->{optgroup};
 }
 
 #############################
@@ -229,7 +227,7 @@ sub page_before_template {
     	
     	$vars->{'doc_section'} = 'edit-values.html';
     	
-    	_field_group_actions($vars);
+    	_field_optgroup_actions($vars);
     	
     }
 }
@@ -237,16 +235,16 @@ sub page_before_template {
 #############################
 #                       Local Methods                             #
 #############################
-sub _display_field_groups {
+sub _display_field_optgroups {
     my $vars = shift;
     my $template = Bugzilla->template;
-    $vars->{'groups'} = $vars->{'field'}->legal_groups;
+    $vars->{'optgroups'} = $vars->{'field'}->legal_optgroups;
     $template->process("fieldgroups/admin/group/list.html.tmpl", $vars)
       || ThrowTemplateError($template->error());
     exit;
 }
 
-sub _field_group_actions {
+sub _field_optgroup_actions {
     my $vars = shift;
 	my $template = Bugzilla->template;
 	my $cgi = Bugzilla->cgi;
@@ -254,7 +252,7 @@ sub _field_group_actions {
 	Bugzilla->user->in_group('admin') ||
         ThrowUserError('auth_failure', {group  => "admin",
                                         action => "edit",
-                                        object => "field_groups"});
+                                        object => "field_optgroups"});
 
     #
     # often-used variables
@@ -283,51 +281,52 @@ sub _field_group_actions {
     $vars->{'field'} = $field;
 
     #
-    # action='' -> Show nice list of value groups.
+    # action='' -> Show nice list of value optgroups.
     #
-    _display_field_groups($vars) unless $action;
+    _display_field_optgroups($vars) unless $action;
 
     #
-    # action='add' -> show form for adding new field group.
+    # action='add' -> show form for adding new field optgroup.
     # (next action will be 'new')
     #
     if ($action eq 'add') {
-        $vars->{'token'} = issue_session_token('add_field_group');
+        $vars->{'token'} = issue_session_token('add_field_optgroup');
         $template->process("fieldgroups/admin/group/create.html.tmpl", $vars)
           || ThrowTemplateError($template->error());
         exit;
     }
 
     #
-    # action='new' -> add field group entered in the 'action=add' screen
+    # action='new' -> add field optgroup entered in the 'action=add' screen
     #
     if ($action eq 'new') {
-        check_token_data($token, 'add_field_group');
+        check_token_data($token, 'add_field_optgroup');
 
-        my $created_group = Bugzilla::Extension::FieldGroups::Group->create({
-            name   => scalar $cgi->param('group'), 
+        my $created_optgroup = Bugzilla::Extension::FieldGroups::Optgroup->create({
+            name   => scalar $cgi->param('optgroup'), 
             field => $field,
             sortkey => scalar $cgi->param('sortkey'),
         });
 
         delete_token($token);
 
-        $vars->{'message'} = 'field_group_created';
-        $vars->{'group'} = $created_group;
-        _display_field_groups($vars);
+        $vars->{'message'} = 'field_optgroup_created';
+        $vars->{'optgroup'} = $created_optgroup;
+        _display_field_optgroups($vars);
     }
 
-    # After this, we always have a group
-    my $group = Bugzilla::Extension::FieldGroups::Group->check({field => $field,
-                                                                                 name => $cgi->param('group')});
-    $vars->{'group'} = $group;
+    # After this, we always have a optgroup
+    my $optgroup = Bugzilla::Extension::FieldGroups::Optgroup->check(
+                                             {field => $field,
+                                              name => $cgi->param('optgroup')});
+    $vars->{'optgroup'} = $optgroup;
 
     #
     # action='del' -> ask if user really wants to delete
     # (next action would be 'delete')
     #
     if ($action eq 'del') {
-        $vars->{'token'} = issue_session_token('delete_field_group');
+        $vars->{'token'} = issue_session_token('delete_field_optgroup');
 
         $template->process("fieldgroups/admin/group/confirm-delete.html.tmpl", $vars)
           || ThrowTemplateError($template->error());
@@ -337,24 +336,24 @@ sub _field_group_actions {
 
 
     #
-    # action='delete' -> really delete the field group
+    # action='delete' -> really delete the field optgroup
     #
     if ($action eq 'delete') {
-        check_token_data($token, 'delete_field_group');
-        $group->remove_from_db();
+        check_token_data($token, 'delete_field_optgroup');
+        $optgroup->remove_from_db();
         delete_token($token);
-        $vars->{'message'} = 'field_group_deleted';
+        $vars->{'message'} = 'field_optgroup_deleted';
         $vars->{'no_edit_link'} = 1;
-        _display_field_groups($vars);
+        _display_field_optgroups($vars);
     }
 
 
     #
-    # action='edit' -> present the edit-group form
+    # action='edit' -> present the edit-optgroup form
     # (next action would be 'update')
     #
     if ($action eq 'edit') {
-        $vars->{'token'} = issue_session_token('edit_field_group');
+        $vars->{'token'} = issue_session_token('edit_field_optgroup');
         $template->process("fieldgroups/admin/group/edit.html.tmpl", $vars)
           || ThrowTemplateError($template->error());
 
@@ -363,17 +362,17 @@ sub _field_group_actions {
 
 
     #
-    # action='update' -> update the field group
+    # action='update' -> update the field optgroup
     #
     if ($action eq 'update') {
-        check_token_data($token, 'edit_field_group');
-        $vars->{'group_old'} = $group->name;
-        $group->set_name($cgi->param('group_new'));
-        $group->set_sortkey($cgi->param('sortkey'));
-        $vars->{'changes'} = $group->update();
+        check_token_data($token, 'edit_field_optgroup');
+        $vars->{'optgroup_old'} = $optgroup->name;
+        $optgroup->set_name($cgi->param('optgroup_new'));
+        $optgroup->set_sortkey($cgi->param('sortkey'));
+        $vars->{'changes'} = $optgroup->update();
         delete_token($token);
-        $vars->{'message'} = 'field_group_updated';
-        _display_field_groups($vars);
+        $vars->{'message'} = 'field_optgroup_updated';
+        _display_field_optgroups($vars);
     }
 
     # No valid action found
@@ -388,36 +387,36 @@ Bugzilla::Extension::FieldGroups - Object for a Bugzilla FieldGroups extension.
 
 =head1 SYNOPSIS
 
-    my @legal_groups  = $field->legal_groups();
+    my @legal_optgroups  = $field->legal_optgroups();
 
 =head1 DESCRIPTION
 
-This package will add optgroup support to <select>-fields.
+This package will add optoptgroup support to <select>-fields.
 
 The methods that are added to other Bugzilla classes are listed below.
 
 =head2 Custom Added Methods
 
-=item C<legal_groups()>
- Description: Valid value groups for this field, as an array of 
-                     L<Bugzilla::Extension::FieldGroups::Group> objects.
+=item C<legal_optgroups()>
+ Description: Valid value optgroups for this field, as an array of 
+                     L<Bugzilla::Extension::FieldGroups::Optgroup> objects.
  Params:      none.
- Returns:     An array of L<Bugzilla::Extension::FieldGroups::Group> objects.
+ Returns:     An array of L<Bugzilla::Extension::FieldGroups::Optgroup> objects.
  
- =item C<check_group_id()>
- Description: Validate group id 
- Params:      Group id.
- Returns:     Validated group id.
+ =item C<check_optgroup_id()>
+ Description: Validate optgroup id 
+ Params:      Optgroup id.
+ Returns:     Validated optgroup id.
  
- =item C<set_group()>
- Description: Sets group for the current Bigzilla::Field::Choice.
- Params:      L<Bugzilla::Extension::ChoiceGroups::Group>.
+ =item C<set_optgroup()>
+ Description: Sets optgroup for the current Bigzilla::Field::Choice.
+ Params:      L<Bugzilla::Extension::ChoiceGroups::Optgroup>.
  Returns:     nothing.
 
- =item C<group()>
- Description: Gets group for the current L<Bugzilla::Field::Choice>.
+ =item C<optgroup()>
+ Description: Gets optgroup for the current L<Bugzilla::Field::Choice>.
  Params:      none
- Returns:     L<Bugzilla::Extension::ChoiceGroups::Group> of current 
+ Returns:     L<Bugzilla::Extension::ChoiceGroups::Optgroup> of current 
                    L<Bugzilla::Field::Choice>.
  
 =back

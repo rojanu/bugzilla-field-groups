@@ -15,13 +15,13 @@
   #%]
 
 [%# INTERFACE:
-  # group: Bugzilla::Field::ChoiceGroup; The field value being deleted.
-  # group_count: number; The number of groups available for this field.
+  # optgroup: Bugzilla::Field::ChoiceGroup; The field value being deleted.
+  # optgroup_count: number; The number of optgroups available for this field.
   # field: object; the field the value is being deleted from.
   #%]
 
 [% title = BLOCK %]
-  Delete Group '[% group.name FILTER html %]' from the 
+  Delete Option Group '[% optgroup.name FILTER html %]' from the 
   '[% field.description FILTER html %]' ([% field.name FILTER html %]) field
 [% END %]
 
@@ -40,18 +40,18 @@
   <td valign="top">[% field.description FILTER html %]</td>
 </tr>
 <tr>
-  <td valign="top">Field Group:</td>
-  <td valign="top">[% group.name FILTER html %]</td>
+  <td valign="top">Field Option Group:</td>
+  <td valign="top">[% optgroup.name FILTER html %]</td>
 </tr>
 <tr>
-  <td valign="top">Group Values:</td>
+  <td valign="top">Values:</td>
   <td valign="top">
-[% IF group.value_count %]
+[% IF optgroup.value_count %]
    <a title="List of values where '
                     [%- field.description FILTER html %]' value is in '
-                    [%- group.name FILTER html %]'"
+                    [%- optgroup.name FILTER html %]'"
              href="editvalues.cgi?field=[% field.name FILTER uri %]">
-        [%- group.value_count FILTER html %]
+        [%- optgroup.value_count FILTER html %]
     </a>
 [% ELSE %]
   None
@@ -62,27 +62,27 @@
 
 <h2>Confirmation</h2>
 
-[% IF group.value_count %]
+[% IF optgroup.value_count %]
 
-  <p>Sorry, but the '[% group.name FILTER html %]' group cannot be deleted
+  <p>Sorry, but the option group '[% optgroup.name FILTER html %]' cannot be deleted
     from the '[% field.description FILTER html %]' field for the following 
     reason(s):</p>
 
   <ul class="warningmessages">
-    [% IF group.value_count  %]
+    [% IF optgroup.value_count  %]
       <li>
-        [% IF group.value_count > 1 %]
-          There are [% group.value_count FILTER html %] values
-          with this field group.
+        [% IF optgroup.value_count > 1 %]
+          There are [% optgroup.value_count FILTER html %] values
+          assigned to this option group.
         [% ELSE %]
-          There is 1 value with this field group.
+          There is a value with this option group.
         [% END %]
-        You must change the field value group on
+        You must change the option group on
           <a title="List of values where '
                     [%- field.description FILTER html %]' value is in '
-                    [%- group.name FILTER html %]'"
+                    [%- optgroup.name FILTER html %]'"
              href="editvalues.cgi?field=[% field.name FILTER uri %]">
-            [% IF group.value_count > 1 %]
+            [% IF optgroup.value_count > 1 %]
               those values
             [% ELSE %]
               that value
@@ -95,13 +95,13 @@
 
 [% ELSE %]
 
-  <p>Do you really want to delete this group?</p>
+  <p>Do you really want to delete this option group?</p>
 
   <form method="post" action="page.cgi?id=fieldgroups.html">
     <input type="submit" value="Yes, delete" id="delete">
     <input type="hidden" name="action" value="delete">
     <input type="hidden" name="field" value="[% field.name FILTER html %]">
-    <input type="hidden" name="group" value="[% group.name FILTER html %]">
+    <input type="hidden" name="optgroup" value="[% optgroup.name FILTER html %]">
     <input type="hidden" name="token" value="[% token FILTER html %]">
   </form>
 

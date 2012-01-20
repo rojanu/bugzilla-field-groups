@@ -29,22 +29,22 @@
 
 [% PROCESS global/variables.none.tmpl %]
 
-[% title = BLOCK %]Select group for the '[% field.description FILTER html %]'
+[% title = BLOCK %]Select option group for the '[% field.description FILTER html %]'
                    ([% field.name FILTER html %]) field[% END %]
 [% PROCESS global/header.html.tmpl
   title = title
 %]
 
 [% edit_contentlink = BLOCK %]page.cgi?id=fieldgroups.html&action=edit&amp;field=
-  [%- field.name FILTER uri %]&amp;group=%%name%%[% END %]
+  [%- field.name FILTER uri %]&amp;optgroup=%%name%%[% END %]
 [% delete_contentlink = BLOCK %]page.cgi?id=fieldgroups.html&action=del&amp;field=
-  [%- field.name FILTER uri %]&amp;group=%%name%%[% END %]
+  [%- field.name FILTER uri %]&amp;optgroup=%%name%%[% END %]
 
 
 [% columns = [
      { 
        name => "name"
-       heading => "Edit field group..."
+       heading => "Edit option group..."
        contentlink => edit_contentlink
      },
      { 
@@ -61,16 +61,16 @@
 
 
 [% SET overrides.action = {} %]
-[% FOREACH check_group = groups %]
-  [% IF check_group.name == "Default" %]
-    [% overrides.action.name.${check_group.name} = {
+[% FOREACH check_optgroup = optgroups %]
+  [% IF check_optgroup.name == "Default" %]
+    [% overrides.action.name.${check_optgroup.name} = {
          override_content => 1
          content => "(Default value)"
          override_contentlink => 1
          contentlink => undef
        }
     %]
-    [% overrides.name.name.${check_group.name} = {
+    [% overrides.name.name.${check_optgroup.name} = {
          override_contentlink => 1
          contentlink => undef
        }
@@ -81,7 +81,7 @@
 
 [% PROCESS admin/table.html.tmpl
      columns = columns
-     data = groups
+     data = optgroups
      overrides = overrides
 %]
 

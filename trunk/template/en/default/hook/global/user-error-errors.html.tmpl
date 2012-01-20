@@ -27,19 +27,19 @@
   # nobody can guarantee the hook files processing order in the future.
   #%]
 
-[% IF error == "fieldgroup_undefined" %]
-  [% title = "Undefined Group Not Allowed" %]
-  You must specify a group.
+[% IF error == "fieldoptgroup_undefined" %]
+  [% title = "Undefined Option Group Not Allowed" %]
+  You must specify a option group.
 
-[% ELSIF error == "fieldgroup_name_too_long" %]
-  [% title = "Field Group Is Too Long" %]
-  The group of a field is limited to 
+[% ELSIF error == "fieldoptgroup_name_too_long" %]
+  [% title = "Field Option Group Is Too Long" %]
+  The option group of a field is limited to 
   [%+ constants.FIELD_VALUE_MAX_SIZE FILTER none %] characters. 
-  '[% group FILTER html %]' is too long ([% group.length %] characters).
+  '[% optgroup FILTER html %]' is too long ([% optgroup.length %] characters).
 
-[% ELSIF error == "fieldgroup_already_exists" %]
-  [% title = "Field Group Already Exists" %]
-  The group '[% group.name FILTER html %]' already exists for the
-  [%+ group.field.description FILTER html %] field.
+[% ELSIF error == "fieldoptgroup_already_exists" %]
+  [% title = "Field Option Group Already Exists" %]
+  The option group '[% optgroup.name FILTER html %]' already exists for the
+  [%+ optgroup.field.description FILTER html %] field.
 
 [% END %]

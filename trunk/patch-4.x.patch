@@ -1,13 +1,13 @@
 === modified file 'template/en/default/admin/custom_fields/edit.html.tmpl'
 --- template/en/default/admin/custom_fields/edit.html.tmpl	2010-08-27 03:27:08 +0000
-+++ template/en/default/admin/custom_fields/edit.html.tmpl	2011-09-08 12:43:43 +0000
++++ template/en/default/admin/custom_fields/edit.html.tmpl	2012-01-19 17:30:50 +0000
 @@ -140,7 +140,9 @@
          <th>&nbsp;</th>
          <td>
            <a href="editvalues.cgi?field=[% field.name FILTER uri %]">Edit
 -            legal values for this field</a>.
 +            legal values for this field</a>.<br>
-+          <a href="editvaluegroups.cgi?field=[% field.name FILTER uri %]">Edit
++          <a href="page.cgi?id=fieldgroups.html&field=[% field.name FILTER uri %]">Edit
 +            legal groups for this field</a>.
          </td>
  
@@ -15,7 +15,7 @@
 
 === modified file 'template/en/default/admin/fieldvalues/create.html.tmpl'
 --- template/en/default/admin/fieldvalues/create.html.tmpl	2010-02-02 01:34:26 +0000
-+++ template/en/default/admin/fieldvalues/create.html.tmpl	2011-09-08 12:43:54 +0000
++++ template/en/default/admin/fieldvalues/create.html.tmpl	2012-01-19 17:29:11 +0000
 @@ -86,6 +86,7 @@
          </td>
        </tr>
@@ -27,7 +27,7 @@
 
 === modified file 'template/en/default/admin/fieldvalues/edit.html.tmpl'
 --- template/en/default/admin/fieldvalues/edit.html.tmpl	2010-05-14 14:25:05 +0000
-+++ template/en/default/admin/fieldvalues/edit.html.tmpl	2011-09-08 12:45:56 +0000
++++ template/en/default/admin/fieldvalues/edit.html.tmpl	2012-01-20 13:08:21 +0000
 @@ -100,6 +100,7 @@
             [% END %]
        </td>
@@ -37,10 +37,38 @@
    <input type="hidden" name="value" value="[% value.name FILTER html %]">
    <input type="hidden" name="action" value="update">
 
+=== modified file 'template/en/default/admin/fieldvalues/list.html.tmpl'
+--- template/en/default/admin/fieldvalues/list.html.tmpl	2010-07-22 22:46:02 +0000
++++ template/en/default/admin/fieldvalues/list.html.tmpl	2012-01-20 15:59:23 +0000
+@@ -50,6 +50,10 @@
+        name => "sortkey"
+        heading => "Sortkey"
+      },
++     { 
++       name => "group"
++       heading => "Group"
++     },
+      {
+        name => "isactive"
+        heading => "Enabled for $terms.bugs"
+@@ -83,7 +87,11 @@
+        }
+     %]
+   [% END %]
+-
++    [% overrides.group.name.${check_value.name} = {
++         override_content => 1
++         content => "$check_value.optgroup.name"
++       }
++    %]
+ [% END %]
+ 
+ [% PROCESS admin/table.html.tmpl
+
 === modified file 'template/en/default/bug/field.html.tmpl'
---- template/en/default/bug/field.html.tmpl	2011-02-23 06:06:05 +0000
-+++ template/en/default/bug/field.html.tmpl	2011-09-08 12:55:45 +0000
-@@ -123,21 +123,28 @@
+--- template/en/default/bug/field.html.tmpl	2012-01-11 23:13:05 +0000
++++ template/en/default/bug/field.html.tmpl	2012-01-19 17:29:11 +0000
+@@ -119,21 +119,28 @@
            [% ELSE %]
              [% legal_values = field.legal_values %]
            [% END %]
@@ -86,15 +114,15 @@
            # it doesn't appear at all in the CGI object. Instead of
 
 === modified file 'template/en/default/global/messages.html.tmpl'
---- template/en/default/global/messages.html.tmpl	2011-08-17 11:05:31 +0000
-+++ template/en/default/global/messages.html.tmpl	2011-09-09 10:39:15 +0000
+--- template/en/default/global/messages.html.tmpl	2011-11-26 00:13:18 +0000
++++ template/en/default/global/messages.html.tmpl	2012-01-20 16:04:28 +0000
 @@ -328,6 +328,10 @@
            <li>Sortkey updated to 
              <em>[% changes.sortkey.1 FILTER html %]</em>.</li>
          [% END %]
-+        [% IF changes.group_id %]
-+        	<li>Value now belongs to group
-+        	  <em>[% value.group.name FILTER html %]</em>.</li>
++        [% IF changes.optgroup_id %]
++        	<li>Value now belongs to option group
++        	  <em>[% value.optgroup.name FILTER html %]</em>.</li>
 +        [% END %]
          [% IF changes.visibility_value_id %]
            [% IF value.visibility_value.defined %]
