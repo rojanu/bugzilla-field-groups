@@ -15,14 +15,14 @@
   #%]
 
 [%# INTERFACE:
-  # group: Bugzilla::Field::ChoiceGroup; The field group we are editing.
+  # optgroup: Bugzilla::Field::ChoiceGroup; The field option group we are editing.
   # field: Bugzilla::Field; The field this value belongs to.
   #%]
 
 [% PROCESS global/variables.none.tmpl %]
 
 [% title = BLOCK %]
-  Edit Group '[% group.name FILTER html %]' for the 
+  Edit Option Group '[% optgroup.name FILTER html %]' for the 
   '[% field.description FILTER html %]' ([% field.name FILTER html %]) field
 [% END %]
 [% PROCESS global/header.html.tmpl
@@ -34,21 +34,21 @@
 
     <tr>
       <th valign="top" align="right">
-        <label for="group_new">Field Group:</label>
+        <label for="optgroup_new">Option Group:</label>
       </th>
       <td>
-          <input id="group_new" name="group_new" size="20"
+          <input id="optgroup_new" name="optgroup_new" size="20"
                  maxlength="[% constants.MAX_FIELD_VALUE_SIZE FILTER none %]"
-                 value="[% group.name FILTER html %]">
+                 value="[% optgroup.name FILTER html %]">
       </td>
     </tr>
     <tr>
       <th align="right"><label for="sortkey">Sortkey:</label></th>
       <td><input id="sortkey" size="6" maxlength="6" name="sortkey" 
-                 value="[%- group.sortkey FILTER html %]"></td>
+                 value="[%- optgroup.sortkey FILTER html %]"></td>
     </tr>
   </table>
-  <input type="hidden" name="group" value="[% group.name FILTER html %]">
+  <input type="hidden" name="optgroup" value="[% optgroup.name FILTER html %]">
   <input type="hidden" name="action" value="update">
   <input type="hidden" name="field" value="[% field.name FILTER html %]">
   <input type="hidden" name="token" value="[% token FILTER html %]">

@@ -17,15 +17,15 @@
   # Contributor(s): Ali Ustek <aliustek@gmail.com>
   #%]
     <tr>
-    	<th align="right"><label for="group_id">Group:</label></th>
+    	<th align="right"><label for="optgroup_id">Option Group:</label></th>
     	<td>
-    	    <select name="group_id" id="group_id">
-    	    	[% FOREACH group = field.legal_groups %]
-               [% NEXT IF group.name == '' %]
-                <option value="[% group.id FILTER none %]"
+    	    <select name="optgroup_id" id="optgroup_id">
+    	    	[% FOREACH optgroup = field.legal_optgroups %]
+               [% NEXT IF optgroup.name == '' %]
+                <option value="[% optgroup.id FILTER none %]"
                  [% ' selected="selected"' 
-                   IF group.id == value.group.id %]>
-                  [% group.name FILTER html -%]
+                   IF optgroup.id == value.optgroup.id %]>
+                  [% optgroup.name FILTER html -%]
                 </option>
               [% END %]
     	    </select>

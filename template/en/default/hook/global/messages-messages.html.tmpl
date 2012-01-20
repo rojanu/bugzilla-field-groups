@@ -27,27 +27,27 @@
   # nobody can guarantee the hook files processing order in the future.
   #%]
 
-[% IF message_tag == "field_group_created" %]
-  [% title = "New Field Group Created" %]
-  The group <em>[% group.name FILTER html %]</em> has been added as a 
-  valid choice group for the <em>[% field.description FILTER html %]</em>
+[% IF message_tag == "field_optgroup_created" %]
+  [% title = "New Field Option Group Created" %]
+  The optiion group <em>[% optgroup.name FILTER html %]</em> has been added as a 
+  valid choice option group for the <em>[% field.description FILTER html %]</em>
   (<em>[% field.name FILTER html %]</em>) field.
 
-[% ELSIF message_tag == "field_group_deleted" %]
-  [% title = "Field Group Deleted" %]
-  The group <em>[% group.name FILTER html %]</em> of the
+[% ELSIF message_tag == "field_optgroup_deleted" %]
+  [% title = "Field Option Group Deleted" %]
+  The option group <em>[% optgroup.name FILTER html %]</em> of the
   <em>[% field.description FILTER html %]</em>
   (<em>[% field.name FILTER html %]</em>) field has been deleted.
 
-[% ELSIF message_tag == "field_group_updated" %]
-  [% title = "Field Group Updated" %]
+[% ELSIF message_tag == "field_optgroup_updated" %]
+  [% title = "Field Option Group Updated" %]
   [% IF changes.keys.size %]
-    The <em>[% group_old FILTER html %]</em> group of the
+    The <em>[% optgroup_old FILTER html %]</em> option group of the
     <em>[% field.description FILTER html %]</em>
     (<em>[% field.name FILTER html %]</em>) field has been changed:
     <ul>
       [% IF changes.name %]
-        <li>Field group updated to 
+        <li>Field option group updated to 
           <em>[% changes.name.1 FILTER html %]</em>.
         </li>
       [% END %]
@@ -58,6 +58,6 @@
       [% END %]
     </ul>
   [% ELSE %]
-    No changes made to the field group <em>[% group_old FILTER html %]</em>.
+    No changes made to the field option group <em>[% optgroup_old FILTER html %]</em>.
   [% END %]
 [% END %]

@@ -15,7 +15,7 @@
   #%]
 
 [%# INTERFACE:
-  # group: string; the group being inserted/edited.
+  # optgroup: string; the option group being inserted/edited.
   # field: object; the field which the value belongs/belonged to.
   #
   # no_XXX_link: boolean; if defined, then don't show the corresponding
@@ -31,19 +31,19 @@
 <p>
 
 [% UNLESS no_add_link %]
-  <a title="Add a group for the '[% field.description FILTER html %]' field."
+  <a title="Add an option group for the '[% field.description FILTER html %]' field."
      href="page.cgi?id=fieldgroups.html&action=add&amp;field=
-          [%- field.name FILTER uri %]">Add</a> a group.
+          [%- field.name FILTER uri %]">Add</a> an option group.
 [% END %]
 
-[% IF group.defined && !no_edit_link %]
+[% IF optgroup.defined && !no_edit_link %]
   Edit group <a 
-  title="Edit group '[% group.name FILTER html %]' for the '
+  title="Edit group '[% optgroup.name FILTER html %]' for the '
          [%- field.name FILTER html %]' field"
   href="page.cgi?id=fieldgroups.html&action=edit&amp;field=
-        [%- field.name FILTER uri %]&amp;group=
-        [%- group.name FILTER uri %]">
-        '[% group.name FILTER html %]'</a>.
+        [%- field.name FILTER uri %]&amp;optgroup=
+        [%- optgroup.name FILTER uri %]">
+        '[% optgroup.name FILTER html %]'</a>.
 [% END %]
 
 [% UNLESS no_edit_other_link %]

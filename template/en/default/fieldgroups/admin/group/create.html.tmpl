@@ -16,27 +16,27 @@
   #%]
 
 [%# INTERFACE:
-  # field: object; the field the group is being created for
+  # field: object; the field the optgroup is being created for
   #%]
   
 [% title = BLOCK %]
-  Add Group for the '[% field.description FILTER html %]' ([% field.name FILTER html %]) field
+  Add Option Group for the '[% field.description FILTER html %]' ([% field.name FILTER html %]) field
 [% END %]
 [% PROCESS global/header.html.tmpl
   title = title
 %]
 
 <p>
-  This page allows you to add a new group for the 
+  This page allows you to add a new option group for the 
   '[% field.description FILTER html %]' field.
 </p>
 
 <form method="post" action="page.cgi?id=fieldgroups.html">
   <table border="0" cellpadding="4" cellspacing="0">
     <tr>
-      <th align="right"><label for="group">Group:</label></th>
+      <th align="right"><label for="optgroup">Option Group:</label></th>
       <td>
-        <input id="group" name="group" size="30"
+        <input id="optgroup" name="optgroup" size="30"
                maxlength="[% constants.MAX_FIELD_VALUE_SIZE FILTER none %]">
       </td>
     </tr>

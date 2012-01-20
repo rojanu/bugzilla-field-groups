@@ -26,13 +26,13 @@
 [% PROCESS global/variables.none.tmpl %]
 
 [% PROCESS global/header.html.tmpl
-  title = "Edit groups for which field?"
+  title = "Edit option groups for which field?"
 %]
 
 [% columns = [
      { 
        name => "name"
-       heading => "Edit field groups for..."
+       heading => "Edit option groups for..."
        content_use_field = 1
        contentlink => "page.cgi?id=fieldgroups.html&field=%%name%%"
      }

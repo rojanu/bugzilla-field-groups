@@ -21,7 +21,7 @@
 
 use strict;
 
-package Bugzilla::Extension::FieldGroups::Group;
+package Bugzilla::Extension::FieldGroups::Optgroup;
 
 use base qw(Bugzilla::Object);
 
@@ -35,7 +35,7 @@ use Scalar::Util qw(blessed);
 ####    Initialization     ####
 ###############################
 
-use constant DB_TABLE => 'field_choice_group';
+use constant DB_TABLE => 'field_choice_optgroup';
 use constant LIST_ORDER => 'sortkey, name';
 
 use constant DB_COLUMNS => qw(
@@ -82,10 +82,10 @@ sub new {
     }
 
     unshift @_, $param;
-    my $group = $class->SUPER::new(@_);
+    my $optgroup = $class->SUPER::new(@_);
     # Add the field object as attribute only if the field exists.
-    $group->{field} = $field if ($group && $field);
-    return $group;
+    $optgroup->{field} = $field if ($optgroup && $field);
+    return $optgroup;
 }
 
 sub create {
@@ -99,10 +99,10 @@ sub create {
     my $field = delete $params->{field};
     $params->{field_id} = $field->id;
 
-    my $group = $class->insert_create_data($params);
+    my $optgroup = $class->insert_create_data($params);
 
     $dbh->bz_commit_transaction();
-    return $group;
+    return $optgroup;
 }
 
 
@@ -116,18 +116,18 @@ sub _check_name {
     									$invocant->field : $params->{field};
 
 	$name = trim($name);
-    $name || ThrowUserError('fieldgroup_undefined');
+    $name || ThrowUserError('fieldoptgroup_undefined');
     if (length($name) > MAX_FIELD_VALUE_SIZE) {
-        ThrowUserError('fieldgroup_name_too_long', { label => $name });
+        ThrowUserError('fieldoptgroup_name_too_long', { label => $name });
     }
     
-    my $group = new Bugzilla::Extension::FieldGroups::Group({
+    my $optgroup = new Bugzilla::Extension::FieldGroups::Optgroup({
                                          name => $name, 
                                          field  => $field,
                                     });
-    if ($group && (!ref $invocant || $group->id != $invocant->id)) {
-        ThrowUserError('fieldgroup_already_exists', {
-        							group    => $group
+    if ($optgroup && (!ref $invocant || $optgroup->id != $invocant->id)) {
+        ThrowUserError('fieldoptgroup_already_exists', {
+        							optgroup    => $optgroup
                                 });
     }
 
@@ -140,7 +140,7 @@ sub _check_sortkey {
     $sortkey ||= 0;
     
     detaint_natural($sortkey) 
-    || ThrowUserError('fieldgroup_sortkey_invalid', { sortkey => $sortkey });
+    || ThrowUserError('fieldoptgroup_sortkey_invalid', { sortkey => $sortkey });
     return $sortkey;
 }
 
@@ -167,22 +167,22 @@ sub value_count {
     my $fname = $self->field->name;
     my $dbh = Bugzilla->dbh;
     my $count = $dbh->selectrow_array( "SELECT COUNT(*) FROM $fname
-                                                          WHERE group_id = ?", undef, $self->id);
+                                                          WHERE optgroup_id = ?", undef, $self->id);
     $self->{value_count} = $count;
     return $count;
 }
 
-sub group_values {
+sub optgroup_values {
 	my $self = shift;
-	return $self->{group_values} if defined $self->{group_values};
+	return $self->{optgroup_values} if defined $self->{optgroup_values};
 	my $field = $self->field;
 	my $fname = $self->field->name;
     my $dbh = Bugzilla->dbh;
     my $ids = $dbh->selectcol_arrayref("SELECT id FROM $fname
-                                                          WHERE group_id = ?", undef, $self->id);
-    $self->{group_values} = Bugzilla::Field::Choice->type($field)->new_from_list($ids);
+                                                          WHERE optgroup_id = ?", undef, $self->id);
+    $self->{optgroup_values} = Bugzilla::Field::Choice->type($field)->new_from_list($ids);
     
-    return $self->{group_values};
+    return $self->{optgroup_values};
 	
 }
 
@@ -199,20 +199,20 @@ sub set_sortkey { $_[0]->set('sortkey', $_[1]); }
 
 =head1 NAME
 
-Bugzilla::Extension::FieldGroups::Group - A Group  for a <select>-type field value.
+Bugzilla::Extension::FieldGroups::Optgroup - A Optgroup  for a <select>-type field value.
 
 =head1 SYNOPSIS
 
  my $field = new Bugzilla::Field({name => 'bug_status'});
 
- my $group = new Bugzilla::Extension::FieldGroups::Group->new(1);
+ my $optgroup = new Bugzilla::Extension::FieldGroups::Optgroup->new(1);
 
- my $groups = Bugzilla::Extension::FieldGroups::Group->new_from_list([1,2,3]);
- my $groups = Bugzilla::Extension::FieldGroups::Group->get_all();
+ my $optgroups = Bugzilla::Extension::FieldGroups::Optgroup->new_from_list([1,2,3]);
+ my $optgroups = Bugzilla::Extension::FieldGroups::Optgroup->get_all();
 
 =head1 DESCRIPTION
 
-This is an implementation of L<Bugzilla::Object>, to represent option groups
+This is an implementation of L<Bugzilla::Object>, to represent option optgroups
 in <select>-type fields
 
 See the L</SYNOPSIS> for examples of how this works.
@@ -226,6 +226,6 @@ These are in addition to the standard L<Bugzilla::Object> accessors.
 
 =item C<value_count>
 
-An integer count of the number of values that have this group set.
+An integer count of the number of values that have this optgroup set.
 
 =back
