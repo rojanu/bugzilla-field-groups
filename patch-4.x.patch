@@ -1,6 +1,18 @@
+=== modified file 'Bugzilla/DB/Schema.pm'
+--- Bugzilla/DB/Schema.pm	2012-02-15 15:26:34 +0000
++++ Bugzilla/DB/Schema.pm	2012-02-16 15:40:05 +0000
+@@ -231,6 +231,7 @@
+         isactive => {TYPE => 'BOOLEAN', NOTNULL => 1,
+                      DEFAULT => 'TRUE'},
+         visibility_value_id => {TYPE => 'INT2'},
++        optgroup_id => {TYPE => 'INT2'},
+     ],
+     # Note that bz_add_field_table should prepend the table name
+     # to these index names.
+
 === modified file 'template/en/default/admin/custom_fields/edit.html.tmpl'
 --- template/en/default/admin/custom_fields/edit.html.tmpl	2010-08-27 03:27:08 +0000
-+++ template/en/default/admin/custom_fields/edit.html.tmpl	2012-01-19 17:30:50 +0000
++++ template/en/default/admin/custom_fields/edit.html.tmpl	2012-01-30 11:44:33 +0000
 @@ -140,7 +140,9 @@
          <th>&nbsp;</th>
          <td>
@@ -15,7 +27,7 @@
 
 === modified file 'template/en/default/admin/fieldvalues/create.html.tmpl'
 --- template/en/default/admin/fieldvalues/create.html.tmpl	2010-02-02 01:34:26 +0000
-+++ template/en/default/admin/fieldvalues/create.html.tmpl	2012-01-19 17:29:11 +0000
++++ template/en/default/admin/fieldvalues/create.html.tmpl	2012-01-30 11:44:33 +0000
 @@ -86,6 +86,7 @@
          </td>
        </tr>
@@ -27,7 +39,7 @@
 
 === modified file 'template/en/default/admin/fieldvalues/edit.html.tmpl'
 --- template/en/default/admin/fieldvalues/edit.html.tmpl	2010-05-14 14:25:05 +0000
-+++ template/en/default/admin/fieldvalues/edit.html.tmpl	2012-01-20 13:08:21 +0000
++++ template/en/default/admin/fieldvalues/edit.html.tmpl	2012-01-30 11:44:33 +0000
 @@ -100,6 +100,7 @@
             [% END %]
        </td>
@@ -39,7 +51,7 @@
 
 === modified file 'template/en/default/admin/fieldvalues/list.html.tmpl'
 --- template/en/default/admin/fieldvalues/list.html.tmpl	2010-07-22 22:46:02 +0000
-+++ template/en/default/admin/fieldvalues/list.html.tmpl	2012-01-20 15:59:23 +0000
++++ template/en/default/admin/fieldvalues/list.html.tmpl	2012-01-30 11:44:33 +0000
 @@ -50,6 +50,10 @@
         name => "sortkey"
         heading => "Sortkey"
@@ -65,57 +77,35 @@
  
  [% PROCESS admin/table.html.tmpl
 
-=== modified file 'template/en/default/bug/field.html.tmpl'
---- template/en/default/bug/field.html.tmpl	2012-01-11 23:13:05 +0000
-+++ template/en/default/bug/field.html.tmpl	2012-01-19 17:29:11 +0000
-@@ -119,21 +119,28 @@
-           [% ELSE %]
-             [% legal_values = field.legal_values %]
-           [% END %]
--          [% FOREACH legal_value = legal_values %]
--            [% NEXT IF NOT legal_value.is_active AND NOT value.contains(legal_value.name).size %]
--            <option value="[% legal_value.name FILTER html %]"
--                    id="v[% legal_value.id FILTER html %]_
--                        [%- field.name FILTER html %]"
--              [%# We always show selected values, even if they should be
--                # hidden %]
--              [% IF value.contains(legal_value.name).size %]
--                selected="selected"
--              [% ELSIF bug AND !legal_value.is_visible_on_bug(bug) %]
--                class="bz_hidden_option" disabled="disabled"
--              [% END %]>
--              [%- display_value(field.name, legal_value.name) FILTER html ~%]
--            </option>
--          [% END %]
-+          [%- FOREACH g = field.legal_groups %]
-+            [% NEXT IF NOT g.group_values.size %]
-+            <optgroup [% ' label="' _ g.name _ '"' UNLESS g.name == 'Default' %]>
-+                [%- FOREACH legal_value = g.group_values %]
-+                  [% NEXT IF NOT legal_value.is_active 
-+                                    AND NOT value.contains(legal_value.name).size
-+                                    AND NOT legal_values.contains(legal_value).size %]
-+                  <option value="[% legal_value.name FILTER html %]"
-+                       id="v[% legal_value.id FILTER html %]_
-+                            [%- field.name FILTER html %]"
-+                  [%# We always show selected values, even if they should be
-+                    # hidden %]
-+                  [% IF value.contains(legal_value.name).size %]
-+                    selected="selected"
-+                  [% ELSIF bug AND !legal_value.is_visible_on_bug(bug) %]
-+                   class="bz_hidden_option" disabled="disabled"
-+                  [% END %]>
-+                  [%- display_value(field.name, legal_value.name) FILTER html ~%]
-+                </option>
-+              [%- END %]
-+            </optgroup>
-+            [%- END %]
-         </select>
-         [%# When you pass an empty multi-select in the web interface,
-           # it doesn't appear at all in the CGI object. Instead of
+=== modified file 'template/en/default/bug/create/create.html.tmpl'
+--- template/en/default/bug/create/create.html.tmpl	2012-02-28 22:28:17 +0000
++++ template/en/default/bug/create/create.html.tmpl	2012-04-02 07:45:27 +0000
+@@ -493,7 +493,7 @@
+     [% NEXT UNLESS field.enter_bug %]
+     [% SET value = ${field.name}.defined ? ${field.name} : "" %]
+     <tr [% 'class="expert_fields"' IF !field.is_mandatory %]>
+-      [% INCLUDE bug/field.html.tmpl 
++      [% INCLUDE fieldgroups/field.html.tmpl 
+         bug = default, field = field, value = value, editable = 1, 
+         value_span = 3 %]
+     </tr>
+
+=== modified file 'template/en/default/bug/edit.html.tmpl'
+--- template/en/default/bug/edit.html.tmpl	2011-12-05 18:58:12 +0000
++++ template/en/default/bug/edit.html.tmpl	2012-01-30 15:11:35 +0000
+@@ -919,7 +919,7 @@
+   [% USE Bugzilla %]
+   [% FOREACH field = Bugzilla.active_custom_fields %]
+     <tr>
+-      [% PROCESS bug/field.html.tmpl value = bug.${field.name}
++      [% PROCESS fieldgroups/field.html.tmpl value = bug.${field.name}
+                                      editable = bug.check_can_change_field(field.name, 0, 1)
+                                      value_span = 2 %]
+     </tr>
 
 === modified file 'template/en/default/global/messages.html.tmpl'
 --- template/en/default/global/messages.html.tmpl	2011-11-26 00:13:18 +0000
-+++ template/en/default/global/messages.html.tmpl	2012-01-20 16:04:28 +0000
++++ template/en/default/global/messages.html.tmpl	2012-01-30 11:44:33 +0000
 @@ -328,6 +328,10 @@
            <li>Sortkey updated to 
              <em>[% changes.sortkey.1 FILTER html %]</em>.</li>
