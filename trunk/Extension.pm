@@ -37,6 +37,7 @@ BEGIN {
    *Bugzilla::Field::legal_optgroups = \&_legal_optgroups;
    *Bugzilla::Field::Choice::set_optgroup = \&_set_optgroup;
    *Bugzilla::Field::ChoiceInterface::optgroup = \&_optgroup;
+   *Bugzilla::Product::legal_optgroups = \&_classifications_as_optgroups;
 }
 
 #############################
@@ -69,26 +70,44 @@ sub db_schema_abstract_schema {
 
 sub install_update_db {
     my ($self, $args) = @_;
-    
     my $dbh = Bugzilla->dbh;
+    
     my @standard_fields = 
         qw(bug_status resolution priority bug_severity op_sys rep_platform);
     my $custom_fields = $dbh->selectcol_arrayref(
         'SELECT name FROM fielddefs WHERE custom = 1 AND type IN(?,?)',
         undef, FIELD_TYPE_SINGLE_SELECT, FIELD_TYPE_MULTI_SELECT);
     foreach my $field_name (@standard_fields, @$custom_fields) {
-    	if (!$dbh->bz_column_info($field_name, 'optgroup_id')){
-    	    my $field = new Bugzilla::Field({'name' => $field_name});
+        #print "Adding optgroup column to $field_name\n";
+	    my $field = new Bugzilla::Field({'name' => $field_name});
+	    my ($optgroup_id) = $dbh->selectrow_arrayref("SELECT id FROM
+	                        field_choice_optgroup WHERE
+	                        name = 'Default' AND
+	                        field_id = ?", undef, $field->id);
+#        my ($optgroup_id) = @$ids;
+	    if (!$optgroup_id) {
 	        my $optgroup = Bugzilla::Extension::FieldGroups::Optgroup->create({
-		        name   => "Default", 
+    	        name   => "Default", 
         		field => $field,
-		        sortkey => "0",
-		    });
+    	        sortkey => "0",
+    	    });
+    	    $optgroup_id = $optgroup->id;
+	    }
+    	if (!$dbh->bz_column_info($field_name, 'optgroup_id')){
         	$dbh->bz_add_column($field_name, 'optgroup_id', 
-        												{TYPE => 'INT2'},
-        												$optgroup->id);
+        	                    {TYPE => 'INT2',
+        	                     NOTNULL => 1,
+        						 DEFAULT => $optgroup_id});
 	        $dbh->bz_add_index($field_name, "${field_name}_optgroup_id_idx", 
                            ['optgroup_id']);
+		}
+		
+		if(!$dbh->selectrow_arrayref(
+            "SELECT COUNT(optgroup_id) FROM $field_name WHERE optgroup_id IS NOT NULL")){
+		    print "Field: $field_name\n";
+		    $dbh->bz_alter_column($field_name, 'optgroup_id',
+                {TYPE => 'INT2', NOTNULL => 1, DEFAULT => $optgroup_id});
+            $dbh->do("UPDATE $field_name SET optgroup_id= $optgroup_id");
 		}
     }
 }
@@ -130,12 +149,17 @@ sub object_end_of_create {
     my $class  = $args->{'class'};
     my $object = $args->{'object'};
 
-	if ($class->isa('Bugzilla::Field')) {
+	if ($object->isa('Bugzilla::Field')
+	    && ($object->type eq FIELD_TYPE_SINGLE_SELECT
+	       || $object->type eq FIELD_TYPE_MULTI_SELECT)) {
+#        warn "End Of Create: Adding optgroup column to ".$object->name."\n";
 		my $created_optgroup = Bugzilla::Extension::FieldGroups::Optgroup->create({
             name   => "Default", 
-            field => $class,
+            field => $object,
             sortkey => "0",
     	});
+    	#Bugzilla->dbh->do("UPDATE ". $object->name ." SET optgroup_id = ?", undef, $created_optgroup->id);
+    	#Bugzilla->dbh->bz_add_column($object->name, 'optgroup_id', {TYPE => 'INT2'},$created_optgroup->id);
 	}
 }
 
@@ -171,7 +195,7 @@ sub _legal_optgroups {
         my $ids = $dbh->selectcol_arrayref(q{
             SELECT id FROM field_choice_optgroup
              WHERE field_id = ?}, undef, $self->id);
- 
+
         $self->{'legal_optgroups'} = 
         						Bugzilla::Extension::FieldGroups::Optgroup->new_from_list($ids);
     }
@@ -208,6 +232,17 @@ sub _optgroup {
                 Bugzilla::Extension::FieldGroups::Optgroup->new($self->{optgroup_id});
     }
     return $self->{optgroup};
+}
+
+##############################
+# Bugzilla::Product Object Methods #
+##############################
+sub _classifications_as_optgroups {
+    my $self = shift;
+    if(!$self->{legal_optgroups}){
+    }
+    
+    return $self->{legal_optgroups};
 }
 
 #############################
@@ -301,7 +336,7 @@ sub _field_optgroup_actions {
     #
     if ($action eq 'new') {
         check_token_data($token, 'add_field_optgroup');
-
+print "Action New: Adding ". $cgi->param('optgroup'). " to $field";
         my $created_optgroup = Bugzilla::Extension::FieldGroups::Optgroup->create({
             name   => scalar $cgi->param('optgroup'), 
             field => $field,
